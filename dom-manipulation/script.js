@@ -409,6 +409,9 @@ let syncTimer = null;
 let lastSyncTime = null;
 let pendingConflicts = [];
 let serverQuotes = [];
+let offlineMode = false;
+let syncQueue = [];
+let isOnline = navigator.onLine;
 
 // Server simulation using JSONPlaceholder
 const SERVER_BASE_URL = 'https://jsonplaceholder.typicode.com';
@@ -430,8 +433,19 @@ function initializeServerSimulation() {
         saveServerQuotesToStorage();
     }
     
-    // Load sync settings
+    // Load sync settings and queue
     loadSyncSettings();
+    loadSyncQueue();
+    
+    // Set up online/offline event listeners
+    window.addEventListener('online', handleOnlineEvent);
+    window.addEventListener('offline', handleOfflineEvent);
+    
+    // Initialize offline mode checkbox
+    const offlineCheckbox = document.getElementById('offlineMode');
+    if (offlineCheckbox) {
+        offlineCheckbox.checked = offlineMode;
+    }
 }
 
 // Save server quotes to localStorage
@@ -453,9 +467,116 @@ function loadSyncSettings() {
             const parsedSettings = JSON.parse(settings);
             autoSyncEnabled = parsedSettings.autoSyncEnabled || false;
             syncInterval = parsedSettings.syncInterval || 30000;
+            offlineMode = parsedSettings.offlineMode || false;
         }
     } catch (error) {
         console.error('Error loading sync settings:', error);
+    }
+}
+
+// Load sync queue from localStorage
+function loadSyncQueue() {
+    try {
+        const queue = localStorage.getItem('quoteGenerator_syncQueue');
+        if (queue) {
+            syncQueue = JSON.parse(queue);
+        }
+    } catch (error) {
+        console.error('Error loading sync queue:', error);
+        syncQueue = [];
+    }
+}
+
+// Save sync queue to localStorage
+function saveSyncQueue() {
+    try {
+        localStorage.setItem('quoteGenerator_syncQueue', JSON.stringify(syncQueue));
+        return true;
+    } catch (error) {
+        console.error('Error saving sync queue:', error);
+        return false;
+    }
+}
+
+// Handle online event
+function handleOnlineEvent() {
+    isOnline = true;
+    updateSyncStatus('Connection restored. Processing queued changes...', 'success');
+    
+    if (syncQueue.length > 0) {
+        processSyncQueue();
+    }
+}
+
+// Handle offline event
+function handleOfflineEvent() {
+    isOnline = false;
+    updateSyncStatus('Connection lost. Changes will be queued for later sync.', 'warning');
+}
+
+// Toggle offline mode
+function toggleOfflineMode() {
+    const checkbox = document.getElementById('offlineMode');
+    offlineMode = checkbox.checked;
+    saveSyncSettings();
+    
+    if (offlineMode) {
+        updateSyncStatus('Offline mode enabled. Changes will be queued when offline.', 'info');
+    } else {
+        updateSyncStatus('Offline mode disabled.', 'info');
+    }
+}
+
+// Add change to sync queue
+function addToSyncQueue(change) {
+    if (!offlineMode && isOnline) {
+        return; // Don't queue if online and offline mode is disabled
+    }
+    
+    syncQueue.push({
+        ...change,
+        timestamp: new Date().toISOString(),
+        id: `queue_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    });
+    
+    saveSyncQueue();
+    updateSyncStatus(`Change queued. Queue size: ${syncQueue.length}`, 'info');
+}
+
+// Process sync queue
+async function processSyncQueue() {
+    if (syncQueue.length === 0) return;
+    
+    updateSyncStatus(`Processing ${syncQueue.length} queued changes...`, 'info');
+    
+    const processedItems = [];
+    const failedItems = [];
+    
+    for (const item of syncQueue) {
+        try {
+            if (item.type === 'add_quote') {
+                await postQuotesToServer([item.data]);
+                processedItems.push(item);
+            } else if (item.type === 'update_quote') {
+                await postQuotesToServer([item.data]);
+                processedItems.push(item);
+            }
+        } catch (error) {
+            console.error('Failed to process queued item:', error);
+            failedItems.push(item);
+        }
+    }
+    
+    // Remove processed items from queue
+    syncQueue = failedItems;
+    saveSyncQueue();
+    
+    if (processedItems.length > 0) {
+        updateSyncStatus(`Successfully processed ${processedItems.length} queued changes.`, 'success');
+    }
+    
+    if (failedItems.length > 0) {
+        updateSyncStatus(`${failedItems.length} changes failed and remain in queue.`, 'warning');
     }
 }
 
@@ -465,6 +586,7 @@ function saveSyncSettings() {
         const settings = {
             autoSyncEnabled,
             syncInterval,
+            offlineMode,
             lastSyncTime
         };
         localStorage.setItem('quoteGenerator_syncSettings', JSON.stringify(settings));
@@ -849,12 +971,17 @@ function showSyncStatus() {
     const status = autoSyncEnabled ? 'Enabled' : 'Disabled';
     const lastSync = lastSyncTime ? lastSyncTime.toLocaleString() : 'Never';
     const nextSync = autoSyncEnabled ? `${syncInterval / 1000} seconds` : 'N/A';
+    const connectionStatus = isOnline ? 'Online' : 'Offline';
+    const queueSize = syncQueue.length;
     
     const statusMessage = `
         Auto Sync: ${status}<br>
+        Connection: ${connectionStatus}<br>
+        Offline Mode: ${offlineMode ? 'Enabled' : 'Disabled'}<br>
         Last Sync: ${lastSync}<br>
         Next Sync: ${nextSync}<br>
-        Pending Conflicts: ${pendingConflicts.length}
+        Pending Conflicts: ${pendingConflicts.length}<br>
+        Queued Changes: ${queueSize}
     `;
     
     updateSyncStatus(statusMessage, 'info');
@@ -880,11 +1007,12 @@ function updateSyncStatus(message, type) {
 function showConflictNotification(conflicts) {
     const notificationElement = document.getElementById('conflictNotification');
     const resolveBtn = document.getElementById('resolveBtn');
+    const conflictDetailsBtn = document.getElementById('conflictDetailsBtn');
     
     notificationElement.innerHTML = `
         <strong>⚠️ Data Conflicts Detected</strong><br>
         ${conflicts.length} conflict(s) found between local and server data.<br>
-        <small>Click "Resolve Conflicts" to review and resolve them.</small>
+        <small>Click "Resolve Conflicts" to auto-resolve or "View Conflicts" to review them manually.</small>
     `;
     
     notificationElement.style.backgroundColor = '#fff3cd';
@@ -893,6 +1021,119 @@ function showConflictNotification(conflicts) {
     notificationElement.style.display = 'block';
     
     resolveBtn.style.display = 'inline-block';
+    conflictDetailsBtn.style.display = 'inline-block';
+}
+
+// Show detailed conflict information
+function showConflictDetails() {
+    const conflictDetails = document.getElementById('conflictDetails');
+    const conflictList = document.getElementById('conflictList');
+    
+    if (pendingConflicts.length === 0) {
+        conflictList.innerHTML = '<p>No conflicts to display.</p>';
+        return;
+    }
+    
+    conflictList.innerHTML = '';
+    
+    pendingConflicts.forEach((conflict, index) => {
+        const conflictElement = document.createElement('div');
+        conflictElement.style.cssText = `
+            background-color: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        `;
+        
+        let conflictHtml = `
+            <div style="font-weight: bold; margin-bottom: 10px;">
+                Conflict ${index + 1}: ${conflict.message}
+            </div>
+        `;
+        
+        if (conflict.type === 'content_mismatch') {
+            conflictHtml += `
+                <div style="margin-bottom: 10px;">
+                    <strong>Local Version:</strong><br>
+                    <div style="background-color: #f8f9fa; padding: 8px; margin: 5px 0; border-radius: 4px;">
+                        "${conflict.local.text}" - ${conflict.local.category}
+                    </div>
+                    <strong>Server Version:</strong><br>
+                    <div style="background-color: #e3f2fd; padding: 8px; margin: 5px 0; border-radius: 4px;">
+                        "${conflict.server.text}" - ${conflict.server.category}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="resolveConflict(${index}, 'local')" style="background-color: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Keep Local</button>
+                    <button onclick="resolveConflict(${index}, 'server')" style="background-color: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Use Server</button>
+                </div>
+            `;
+        } else if (conflict.type === 'local_only') {
+            conflictHtml += `
+                <div style="margin-bottom: 10px;">
+                    <strong>Local Quote:</strong><br>
+                    <div style="background-color: #f8f9fa; padding: 8px; margin: 5px 0; border-radius: 4px;">
+                        "${conflict.local.text}" - ${conflict.local.category}
+                    </div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="resolveConflict(${index}, 'keep')" style="background-color: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Keep Local</button>
+                    <button onclick="resolveConflict(${index}, 'remove')" style="background-color: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Remove</button>
+                </div>
+            `;
+        }
+        
+        conflictElement.innerHTML = conflictHtml;
+        conflictList.appendChild(conflictElement);
+    });
+    
+    conflictDetails.style.display = 'block';
+}
+
+// Resolve individual conflict
+function resolveConflict(conflictIndex, resolution) {
+    const conflict = pendingConflicts[conflictIndex];
+    
+    if (conflict.type === 'content_mismatch') {
+        const localIndex = quotes.findIndex(q => q.text === conflict.local.text);
+        if (localIndex !== -1) {
+            if (resolution === 'server') {
+                quotes[localIndex] = { ...conflict.server, source: 'server_resolved' };
+            } else {
+                quotes[localIndex] = { ...conflict.local, source: 'local_kept' };
+            }
+        }
+    } else if (conflict.type === 'local_only') {
+        const localIndex = quotes.findIndex(q => q.text === conflict.local.text);
+        if (localIndex !== -1) {
+            if (resolution === 'remove') {
+                quotes.splice(localIndex, 1);
+            } else {
+                quotes[localIndex] = { ...conflict.local, source: 'local_kept' };
+            }
+        }
+    }
+    
+    // Remove resolved conflict
+    pendingConflicts.splice(conflictIndex, 1);
+    
+    // Save changes
+    saveQuotesToStorage();
+    updateQuoteStats();
+    populateCategories();
+    
+    // Update conflict display
+    if (pendingConflicts.length === 0) {
+        document.getElementById('conflictDetails').style.display = 'none';
+        document.getElementById('conflictNotification').style.display = 'none';
+        document.getElementById('resolveBtn').style.display = 'none';
+        document.getElementById('conflictDetailsBtn').style.display = 'none';
+        updateSyncStatus('All conflicts resolved successfully.', 'success');
+    } else {
+        showConflictDetails(); // Refresh the display
+    }
 }
 
 // Resolve conflicts manually
@@ -1060,7 +1301,9 @@ function addQuote() {
     // Create new quote object
     const newQuote = {
         text: newQuoteText,
-        category: newQuoteCategory
+        category: newQuoteCategory,
+        id: `local_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toISOString()
     };
     
     // Add to quotes array
@@ -1071,6 +1314,23 @@ function addQuote() {
         alert('Error saving quote. Please try again.');
         quotes.pop(); // Remove the quote if save failed
         return;
+    }
+    
+    // Add to sync queue if offline or offline mode is enabled
+    if (!isOnline || offlineMode) {
+        addToSyncQueue({
+            type: 'add_quote',
+            data: newQuote
+        });
+    } else {
+        // Try to sync immediately if online
+        postQuotesToServer([newQuote]).catch(error => {
+            console.error('Failed to sync new quote:', error);
+            addToSyncQueue({
+                type: 'add_quote',
+                data: newQuote
+            });
+        });
     }
     
     // Clear the form inputs
@@ -1303,6 +1563,8 @@ window.QuoteGenerator = {
     toggleAutoSync,
     showSyncStatus,
     resolveConflicts,
+    showConflictDetails,
+    resolveConflict,
     fetchQuotesFromServer,
     postQuotesToServer,
     detectConflicts,
@@ -1312,5 +1574,13 @@ window.QuoteGenerator = {
     showDataUpdateNotification,
     showNewQuotesNotification,
     showErrorNotification,
+    // Offline support functions
+    toggleOfflineMode,
+    addToSyncQueue,
+    processSyncQueue,
+    handleOnlineEvent,
+    handleOfflineEvent,
+    loadSyncQueue,
+    saveSyncQueue,
     quotes: () => quotes // Getter function to access quotes array
 };

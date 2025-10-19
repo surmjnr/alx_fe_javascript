@@ -149,240 +149,406 @@
 **Objective**: Verify category dropdown updates correctly
 
 **Steps**:
-1. Note initial categories in dropdown
-2. Add quotes with existing categories
-3. Verify dropdown doesn't duplicate categories
-4. Add quotes with new categories
-5. Verify new categories appear in dropdown
-6. Clear all quotes
-7. Verify dropdown shows only "All Categories"
-8. Reset to defaults
-9. Verify default categories are restored
+1. Add quotes with different categories
+2. Verify categories appear in dropdown
+3. Add quotes with existing categories
+4. Verify no duplicate categories appear
+5. Clear all quotes and verify dropdown shows only "All Categories"
+6. Reset to defaults and verify default categories appear
 
-**Expected Result**: Category dropdown should update dynamically and accurately
+**Expected Result**: Category dropdown should update dynamically and maintain alphabetical order
 
-### Test 12: Filtered Quotes Display
-**Objective**: Verify filtered quotes display correctly
+## Server Sync & Conflict Resolution Testing
+
+### Test 12: Server Simulation Initialization
+**Objective**: Verify server simulation starts correctly
 
 **Steps**:
-1. Select a category with multiple quotes
-2. Verify all quotes in that category are displayed
-3. Check that quotes are numbered correctly (1 of X, 2 of X, etc.)
-4. Verify styling and formatting of filtered quotes
-5. Select a category with no quotes
-6. Verify "No quotes found" message appears
-7. Test with categories that have one quote
+1. Open the application
+2. Check console for server initialization messages
+3. Verify sync status shows "Auto Sync: Disabled"
+4. Check that server quotes are loaded (check localStorage)
+5. Verify offline mode checkbox is unchecked by default
 
-**Expected Result**: Filtered quotes should display with proper formatting and numbering
+**Expected Result**: Server simulation should initialize without errors
 
-### Test 14: Server Simulation & Data Syncing
-**Objective**: Verify server simulation and data syncing functionality
+### Test 13: Manual Sync Functionality
+**Objective**: Verify manual sync works correctly
 
 **Steps**:
 1. Click "Manual Sync Now" button
-2. Verify sync status shows "Syncing..." during operation
-3. Check that server quotes are fetched and merged with local quotes
-4. Verify sync status shows success message with quote count
-5. Check that new server quotes appear in the collection
-6. Verify categories dropdown updates with new categories
+2. Monitor sync status for progress messages
+3. Verify sync completes successfully
+4. Check that new quotes from server are added
+5. Verify sync status shows success message
+6. Check that last sync time is updated
 
-**Expected Result**: Manual sync should successfully fetch and merge server data
+**Expected Result**: Manual sync should fetch and merge server data
 
-### Test 15: Auto Sync Functionality
-**Objective**: Verify automatic synchronization works correctly
+### Test 14: Auto Sync Toggle
+**Objective**: Verify auto sync can be enabled/disabled
 
 **Steps**:
 1. Click "Enable Auto Sync" button
-2. Verify button changes to "Disable Auto Sync" and turns red
-3. Check that sync settings panel appears
-4. Wait for automatic sync to occur (default 30 seconds)
-5. Verify sync happens automatically without user intervention
-6. Click "Disable Auto Sync" and verify it stops
+2. Verify button text changes to "Disable Auto Sync"
+3. Verify button color changes to red
+4. Verify sync settings panel appears
+5. Check sync status shows auto sync is enabled
+6. Click "Disable Auto Sync"
+7. Verify button reverts to original state
+8. Verify sync settings panel hides
 
-**Expected Result**: Auto sync should work automatically at specified intervals
+**Expected Result**: Auto sync toggle should work correctly
 
-### Test 16: Sync Settings Management
-**Objective**: Verify sync interval settings work correctly
+### Test 15: Sync Interval Configuration
+**Objective**: Verify sync interval can be modified
 
 **Steps**:
 1. Enable auto sync
-2. Change sync interval to 15 seconds
+2. Change sync interval to 60 seconds
 3. Click "Update" button
-4. Verify success message appears
-5. Wait and verify sync occurs at new interval
-6. Test with invalid intervals (too low/high)
-7. Verify error messages for invalid values
+4. Verify sync status shows new interval
+5. Test with invalid values (too low/high)
+6. Verify error message for invalid intervals
+7. Test with valid values (10-300 seconds)
 
-**Expected Result**: Sync interval should be configurable and validated
+**Expected Result**: Sync interval should be configurable within valid range
 
-### Test 17: Conflict Detection
-**Objective**: Verify conflict detection between local and server data
+### Test 16: Conflict Detection
+**Objective**: Verify conflicts are detected correctly
 
 **Steps**:
 1. Add a quote locally
-2. Manually modify server data (via console or localStorage)
-3. Run manual sync
+2. Manually modify server data in localStorage to create conflict
+3. Perform manual sync
 4. Verify conflict notification appears
-5. Check that "Resolve Conflicts" button becomes visible
-6. Verify conflict details are displayed correctly
+5. Check that "Resolve Conflicts" and "View Conflicts" buttons appear
+6. Verify conflict count is displayed correctly
 
-**Expected Result**: Conflicts should be detected and reported to user
+**Expected Result**: Conflicts should be detected and displayed
 
-### Test 18: Conflict Resolution
-**Objective**: Verify conflict resolution functionality
+### Test 17: Automatic Conflict Resolution
+**Objective**: Verify automatic conflict resolution works
 
 **Steps**:
-1. Create a conflict scenario (as in Test 17)
-2. Click "Resolve Conflicts" button
-3. Verify conflicts are resolved automatically
-4. Check that notification disappears
-5. Verify resolved quotes are marked appropriately
-6. Check that data is synchronized correctly
+1. Create conflicts (as in Test 16)
+2. Enable auto sync
+3. Wait for auto sync to trigger
+4. Verify conflicts are auto-resolved after 2 seconds
+5. Check that server data takes precedence
+6. Verify conflict notification disappears
 
-**Expected Result**: Conflicts should be resolved with server data taking precedence
+**Expected Result**: Conflicts should be auto-resolved with server precedence
 
-### Test 19: Sync Status Display
-**Objective**: Verify sync status information is accurate
+### Test 18: Manual Conflict Resolution
+**Objective**: Verify manual conflict resolution interface
+
+**Steps**:
+1. Create conflicts (as in Test 16)
+2. Click "View Conflicts" button
+3. Verify conflict details panel appears
+4. Check that local and server versions are displayed
+5. Test "Keep Local" button for content mismatch
+6. Test "Use Server" button for content mismatch
+7. Test "Keep Local" button for local-only conflicts
+8. Test "Remove" button for local-only conflicts
+9. Verify conflicts are resolved individually
+
+**Expected Result**: Manual conflict resolution should work for each conflict type
+
+### Test 19: Offline Mode Functionality
+**Objective**: Verify offline mode works correctly
+
+**Steps**:
+1. Enable offline mode checkbox
+2. Verify sync status shows offline mode enabled
+3. Disable network connection (or simulate offline)
+4. Add a new quote
+5. Verify quote is added to sync queue
+6. Check sync status shows queued changes
+7. Re-enable network connection
+8. Verify queued changes are processed
+9. Check sync status shows successful processing
+
+**Expected Result**: Offline mode should queue changes and process them when online
+
+### Test 20: Online/Offline Event Handling
+**Objective**: Verify online/offline events are handled
+
+**Steps**:
+1. Enable offline mode
+2. Disable network connection
+3. Verify "Connection lost" message appears
+4. Add several quotes while offline
+5. Re-enable network connection
+6. Verify "Connection restored" message appears
+7. Check that queued changes are processed
+8. Verify sync status updates accordingly
+
+**Expected Result**: Online/offline events should trigger appropriate actions
+
+### Test 21: Sync Queue Management
+**Objective**: Verify sync queue persists and processes correctly
+
+**Steps**:
+1. Enable offline mode
+2. Go offline
+3. Add multiple quotes
+4. Refresh the page while offline
+5. Verify quotes are still in queue
+6. Go online
+7. Verify queue is processed
+8. Check that queue is cleared after processing
+
+**Expected Result**: Sync queue should persist across sessions and process correctly
+
+### Test 22: Error Handling in Sync
+**Objective**: Verify sync handles errors gracefully
+
+**Steps**:
+1. Disable network connection
+2. Try manual sync
+3. Verify error message appears
+4. Check that sync status shows failure
+5. Re-enable network connection
+6. Try manual sync again
+7. Verify sync succeeds
+
+**Expected Result**: Sync should handle network errors gracefully
+
+### Test 23: Data Integrity During Sync
+**Objective**: Verify data integrity is maintained during sync
+
+**Steps**:
+1. Add several quotes locally
+2. Perform manual sync
+3. Verify all local quotes are preserved
+4. Check that server quotes are merged
+5. Verify no duplicate quotes exist
+6. Check that quote IDs are maintained
+7. Verify categories are updated correctly
+
+**Expected Result**: Data integrity should be maintained during sync operations
+
+### Test 24: Sync Status Monitoring
+**Objective**: Verify sync status provides accurate information
 
 **Steps**:
 1. Click "Sync Status" button
-2. Verify all sync information is displayed correctly:
-   - Auto Sync status (Enabled/Disabled)
-   - Last Sync time
-   - Next Sync time
-   - Pending Conflicts count
-3. Perform a manual sync
+2. Verify all status information is displayed:
+   - Auto Sync status
+   - Connection status
+   - Offline mode status
+   - Last sync time
+   - Next sync time
+   - Pending conflicts
+   - Queued changes
+3. Perform various sync operations
 4. Check sync status again
-5. Verify information updates correctly
+5. Verify information is updated correctly
 
-**Expected Result**: Sync status should provide accurate and up-to-date information
+**Expected Result**: Sync status should provide comprehensive and accurate information
 
-### Test 20: Data Persistence Across Sessions
-**Objective**: Verify sync settings persist across browser sessions
-
-**Steps**:
-1. Enable auto sync with custom interval
-2. Refresh the page
-3. Verify auto sync is still enabled
-4. Verify custom interval is preserved
-5. Close and reopen browser
-6. Verify sync settings are restored
-
-**Expected Result**: Sync settings should persist across sessions
-
-### Test 21: Error Handling
-**Objective**: Verify robust error handling for sync operations
+### Test 25: Integration with Quote Management
+**Objective**: Verify sync integrates with existing quote management
 
 **Steps**:
-1. Disconnect from internet (or block requests)
-2. Try manual sync
-3. Verify appropriate error message appears
-4. Reconnect and try sync again
-5. Verify sync works after reconnection
-6. Test with invalid server responses
+1. Add quotes using the form
+2. Enable auto sync
+3. Verify quotes are synced to server
+4. Import quotes from JSON
+5. Verify imported quotes are synced
+6. Export quotes to JSON
+7. Verify exported quotes include synced data
+8. Clear all quotes
+9. Verify sync queue is cleared
 
-**Expected Result**: Sync should handle errors gracefully with clear messages
+**Expected Result**: Sync should integrate seamlessly with all quote management features
 
-### Test 22: Browser Compatibility
-**Objective**: Verify functionality across different browsers
+## Advanced Testing Scenarios
+
+### Test 26: Stress Testing Sync Operations
+**Objective**: Verify sync handles large amounts of data
+
+**Steps**:
+1. Import a large JSON file with many quotes
+2. Enable auto sync
+3. Monitor performance during sync
+4. Check that UI remains responsive
+5. Verify all quotes are synced correctly
+6. Test with rapid quote additions
+7. Verify sync queue handles load
+
+**Expected Result**: Sync should handle large datasets without performance issues
+
+### Test 27: Concurrent Operations Testing
+**Objective**: Verify sync handles concurrent operations
+
+**Steps**:
+1. Enable auto sync
+2. Rapidly add multiple quotes
+3. Perform manual sync while auto sync is running
+4. Check for race conditions
+5. Verify data consistency
+6. Test with multiple browser tabs open
+7. Verify each tab maintains separate state
+
+**Expected Result**: Concurrent operations should not cause data corruption
+
+### Test 28: Browser Compatibility Testing
+**Objective**: Verify sync works across different browsers
 
 **Steps**:
 1. Test in Chrome
 2. Test in Firefox
-3. Test in Safari (if available)
+3. Test in Safari
 4. Test in Edge
+5. Verify localStorage works in all browsers
+6. Check that online/offline events work
+7. Verify sync functionality is consistent
 
-**Expected Result**: Should work consistently across modern browsers
+**Expected Result**: Sync should work consistently across all modern browsers
 
-## Sample Test Data
+### Test 29: Data Migration Testing
+**Objective**: Verify sync handles data migration scenarios
 
-### Valid JSON for Import Testing
+**Steps**:
+1. Create quotes in old format
+2. Update application code
+3. Verify old quotes are migrated
+4. Test sync with migrated data
+5. Verify no data loss occurs
+6. Test with corrupted localStorage data
+7. Verify graceful fallback to defaults
+
+**Expected Result**: Data migration should be handled gracefully
+
+### Test 30: Performance Monitoring
+**Objective**: Verify sync operations don't impact performance
+
+**Steps**:
+1. Monitor memory usage during sync
+2. Check CPU usage during auto sync
+3. Verify sync doesn't block UI
+4. Test with slow network connections
+5. Monitor localStorage usage
+6. Check for memory leaks
+7. Verify cleanup after sync operations
+
+**Expected Result**: Sync operations should not significantly impact performance
+
+## Test Data Preparation
+
+### Sample JSON Files for Testing
+
+**Valid Quote File (quotes_test.json)**:
 ```json
 [
   {
-    "text": "The only impossible journey is the one you never begin.",
-    "category": "Inspiration"
+    "text": "The only way to do great work is to love what you do.",
+    "category": "Motivation"
   },
   {
-    "text": "Success is not the key to happiness. Happiness is the key to success.",
-    "category": "Success"
+    "text": "Innovation distinguishes between a leader and a follower.",
+    "category": "Leadership"
   },
   {
-    "text": "The way to get started is to quit talking and begin doing.",
-    "category": "Action"
+    "text": "Life is what happens to you while you're busy making other plans.",
+    "category": "Life"
   }
 ]
 ```
 
-### Invalid JSON for Error Testing
+**Invalid Quote File (invalid_quotes.json)**:
 ```json
-{
-  "invalid": "format",
-  "not": "an array"
-}
+[
+  {
+    "text": "",
+    "category": "Empty"
+  },
+  {
+    "text": "Valid quote",
+    "category": ""
+  },
+  {
+    "invalid": "structure"
+  }
+]
 ```
 
-## Console Commands for Advanced Testing
-
-Open browser console and use these commands:
-
-```javascript
-// Check current quotes
-console.log(QuoteGenerator.quotes());
-
-// Check local storage
-console.log(localStorage.getItem('quoteGenerator_quotes'));
-
-// Check session storage
-console.log(sessionStorage.getItem('quoteGenerator_lastQuote'));
-console.log(sessionStorage.getItem('quoteGenerator_preferences'));
-
-// Check filter storage
-console.log(localStorage.getItem('quoteGenerator_lastFilter'));
-
-// Check sync settings
-console.log(localStorage.getItem('quoteGenerator_syncSettings'));
-console.log(localStorage.getItem('quoteGenerator_serverQuotes'));
-
-// Test utility functions
-console.log(QuoteGenerator.filterQuotesByCategory('Motivation'));
-console.log(QuoteGenerator.searchQuotes('success'));
-
-// Test filtering functions
-QuoteGenerator.populateCategories();
-QuoteGenerator.filterQuotes();
-
-// Test sync functions
-QuoteGenerator.manualSync();
-QuoteGenerator.toggleAutoSync();
-QuoteGenerator.showSyncStatus();
-
-// Manual export test
-QuoteGenerator.exportToJson();
-
-// Manual storage test
-QuoteGenerator.saveQuotesToStorage();
-
-// Test category filtering
-QuoteGenerator.showRandomQuoteFromFilter();
-
-// Test server simulation
-QuoteGenerator.fetchQuotesFromServer().then(console.log);
-QuoteGenerator.detectConflicts(QuoteGenerator.quotes(), []);
+**Large Quote File (large_quotes.json)**:
+```json
+[
+  {
+    "text": "Quote 1",
+    "category": "Category A"
+  },
+  {
+    "text": "Quote 2", 
+    "category": "Category B"
+  }
+]
 ```
+*Note: Create a file with 100+ quotes for stress testing*
 
-## Expected Console Output
+## Troubleshooting Common Issues
 
-When everything is working correctly, you should see:
-- No error messages in console
-- Successful storage operations
-- Proper data validation
-- Clean error handling
+### Issue: Sync Status Shows "Never" for Last Sync
+**Solution**: Perform a manual sync to initialize the timestamp
 
-## Performance Considerations
+### Issue: Conflicts Not Detected
+**Solution**: Ensure server data differs from local data, check console for errors
 
-The application should:
-- Load quickly (< 1 second)
-- Handle large quote collections efficiently
-- Provide smooth animations
-- Maintain responsive UI during operations
+### Issue: Auto Sync Not Working
+**Solution**: Check that auto sync is enabled and interval is set correctly
+
+### Issue: Offline Mode Not Queuing Changes
+**Solution**: Verify offline mode checkbox is checked and network is actually offline
+
+### Issue: Sync Queue Not Processing
+**Solution**: Check network connection and try manual sync
+
+### Issue: Data Loss During Sync
+**Solution**: Check browser console for errors, verify localStorage is not full
+
+## Performance Benchmarks
+
+### Expected Performance Metrics:
+- Manual sync: < 2 seconds
+- Auto sync interval: 10-300 seconds (configurable)
+- Conflict resolution: < 1 second per conflict
+- Queue processing: < 1 second per queued item
+- Memory usage: < 10MB additional for sync features
+- localStorage usage: < 1MB for sync data
+
+### Browser Support:
+- Chrome 60+
+- Firefox 55+
+- Safari 12+
+- Edge 79+
+
+## Test Completion Checklist
+
+- [ ] All basic functionality tests pass
+- [ ] All server sync tests pass
+- [ ] All conflict resolution tests pass
+- [ ] All offline mode tests pass
+- [ ] All error handling tests pass
+- [ ] Performance benchmarks are met
+- [ ] Cross-browser compatibility verified
+- [ ] Data integrity maintained
+- [ ] User experience is smooth
+- [ ] No console errors during testing
+
+## Reporting Test Results
+
+When reporting test results, include:
+1. Browser version and OS
+2. Test cases that passed/failed
+3. Screenshots of any issues
+4. Console error messages
+5. Performance metrics
+6. Steps to reproduce any failures
+7. Suggested improvements
+
+This comprehensive testing guide ensures that all server sync and conflict resolution features work correctly and provide a robust user experience.

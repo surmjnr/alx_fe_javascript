@@ -57,10 +57,23 @@ A web application that demonstrates advanced DOM manipulation techniques in Java
 - `toggleAutoSync()` - Enables/disables automatic synchronization
 - `showSyncStatus()` - Displays current sync status and settings
 - `resolveConflicts()` - Resolves data conflicts between local and server
+- `showConflictDetails()` - Shows detailed conflict information for manual resolution
+- `resolveConflict(index, resolution)` - Resolves individual conflicts
 - `fetchQuotesFromServer()` - Simulates fetching quotes from server
 - `postQuotesToServer(quotes)` - Simulates posting quotes to server
 - `detectConflicts(local, server)` - Detects conflicts between data sets
 - `mergeQuotes(local, server)` - Merges local and server quote data
+- `startPeriodicQuoteCheck()` - Starts periodic checking for new quotes
+- `showDataUpdateNotification(count)` - Shows notification for data updates
+- `showNewQuotesNotification(quotes)` - Shows notification for new quotes
+- `showErrorNotification(message)` - Shows error notifications
+- `toggleOfflineMode()` - Toggles offline mode for queuing changes
+- `addToSyncQueue(change)` - Adds changes to sync queue
+- `processSyncQueue()` - Processes queued changes when online
+- `handleOnlineEvent()` - Handles online connection events
+- `handleOfflineEvent()` - Handles offline connection events
+- `loadSyncQueue()` - Loads sync queue from localStorage
+- `saveSyncQueue()` - Saves sync queue to localStorage
 
 ### JSON Import/Export Functions
 - `exportToJson()` - Exports quotes to a downloadable JSON file
@@ -85,9 +98,12 @@ A web application that demonstrates advanced DOM manipulation techniques in Java
 7. Enable "Auto Sync" for automatic server synchronization
 8. Use "Manual Sync Now" to sync with server immediately
 9. Resolve conflicts when detected between local and server data
-10. Use "Export to JSON" to download your quote collection
-11. Use "Import from JSON" to add quotes from a file
-12. Use "Clear All Quotes" or "Reset to Defaults" for data management
+10. Use "View Conflicts" to manually resolve individual conflicts
+11. Enable "Offline Mode" to queue changes when offline
+12. Monitor sync status and connection status
+13. Use "Export to JSON" to download your quote collection
+14. Use "Import from JSON" to add quotes from a file
+15. Use "Clear All Quotes" or "Reset to Defaults" for data management
 
 ## Server Sync & Conflict Resolution Features
 
@@ -96,24 +112,37 @@ A web application that demonstrates advanced DOM manipulation techniques in Java
 - **Realistic Delays**: Includes API response delays for authentic testing
 - **Dynamic Updates**: Server occasionally adds new quotes to simulate real-world updates
 - **Data Persistence**: Server data is stored locally for consistent simulation
+- **Fallback Support**: Graceful fallback to local simulation when API is unavailable
 
 ### Data Synchronization
 - **Manual Sync**: On-demand synchronization with server data
 - **Auto Sync**: Configurable automatic synchronization (10-300 seconds)
 - **Smart Merging**: Intelligent merging of local and server data
 - **Conflict Detection**: Automatic detection of data conflicts
+- **Periodic Checking**: Enhanced periodic checking for new quotes from server
 
 ### Conflict Resolution
 - **Automatic Detection**: Identifies conflicts between local and server data
 - **Visual Notifications**: Clear conflict notifications with resolution options
 - **Server Precedence**: Server data takes precedence in conflict resolution
 - **Manual Resolution**: Option for manual conflict resolution when needed
+- **Detailed Conflict View**: Individual conflict resolution with side-by-side comparison
+- **Conflict Types**: Handles content mismatches and local-only quotes
+
+### Offline Support
+- **Offline Mode**: Queue changes when offline for later synchronization
+- **Sync Queue**: Persistent queue that survives browser sessions
+- **Online/Offline Detection**: Automatic detection of network status changes
+- **Queue Processing**: Automatic processing of queued changes when connection is restored
+- **Error Recovery**: Robust error handling for failed sync operations
 
 ### Sync Management
 - **Status Monitoring**: Real-time sync status and conflict monitoring
 - **Settings Persistence**: Sync settings persist across browser sessions
 - **Error Handling**: Robust error handling for network issues
 - **Performance Optimization**: Efficient sync algorithms with minimal overhead
+- **Connection Status**: Real-time connection status monitoring
+- **Queue Management**: Visual queue status and management
 
 ## Category Filtering Features
 
@@ -192,11 +221,39 @@ Works in all modern browsers that support:
 
 See `TESTING.md` for comprehensive testing instructions and validation procedures.
 
+### Quick Testing Checklist
+- [ ] Basic quote functionality (add, display, filter)
+- [ ] Local storage persistence across sessions
+- [ ] JSON import/export functionality
+- [ ] Server sync initialization
+- [ ] Manual sync operation
+- [ ] Auto sync toggle and configuration
+- [ ] Conflict detection and resolution
+- [ ] Offline mode and sync queue
+- [ ] Online/offline event handling
+- [ ] Error handling and recovery
+- [ ] Performance with large datasets
+- [ ] Cross-browser compatibility
+
+### Testing Server Sync Features
+1. **Manual Sync**: Click "Manual Sync Now" and verify server data is fetched
+2. **Auto Sync**: Enable auto sync and wait for automatic synchronization
+3. **Conflict Resolution**: Create conflicts and test both automatic and manual resolution
+4. **Offline Mode**: Enable offline mode, go offline, add quotes, then go online
+5. **Sync Status**: Monitor sync status for accurate information display
+6. **Error Handling**: Test with network issues and verify graceful error handling
+
 ## Error Handling
 
 The application includes robust error handling for:
 - Invalid JSON imports
 - Storage quota exceeded
 - File reading errors
-- Network issues
+- Network issues and API failures
 - Browser compatibility issues
+- Sync operation failures
+- Conflict resolution errors
+- Offline/online state changes
+- Queue processing failures
+- Data integrity issues
+- Memory and performance issues
