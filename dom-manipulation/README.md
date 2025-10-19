@@ -11,7 +11,11 @@ A web application that demonstrates advanced DOM manipulation techniques in Java
 - **Category Filtering**: Filter quotes by category with a dynamic dropdown menu
 - **Filter Persistence**: Remember the last selected filter across browser sessions
 - **Dynamic Category Management**: Categories are automatically updated when quotes are added
-- **Filtered Quote Display**: View all quotes in a selected category with proper formatting
+- **Server Simulation**: Simulates server interaction with mock API endpoints
+- **Data Synchronization**: Automatic and manual sync with server data
+- **Conflict Resolution**: Detects and resolves data conflicts between local and server
+- **Auto Sync**: Configurable automatic synchronization at specified intervals
+- **Sync Status**: Real-time sync status and conflict monitoring
 - **Data Management**: Clear all quotes or reset to default collection
 - **Real-time Validation**: Form validation with user feedback
 - **Smooth Animations**: CSS transitions for better user experience
@@ -47,6 +51,17 @@ A web application that demonstrates advanced DOM manipulation techniques in Java
 - `saveLastSelectedFilter(category)` - Saves selected filter to localStorage
 - `getLastSelectedFilter()` - Retrieves last selected filter from localStorage
 
+### Server Sync Functions
+- `initializeServerSimulation()` - Initializes server simulation and loads settings
+- `manualSync()` - Performs manual synchronization with server
+- `toggleAutoSync()` - Enables/disables automatic synchronization
+- `showSyncStatus()` - Displays current sync status and settings
+- `resolveConflicts()` - Resolves data conflicts between local and server
+- `fetchQuotesFromServer()` - Simulates fetching quotes from server
+- `postQuotesToServer(quotes)` - Simulates posting quotes to server
+- `detectConflicts(local, server)` - Detects conflicts between data sets
+- `mergeQuotes(local, server)` - Merges local and server quote data
+
 ### JSON Import/Export Functions
 - `exportToJson()` - Exports quotes to a downloadable JSON file
 - `importFromJsonFile(event)` - Imports quotes from a JSON file
@@ -67,9 +82,38 @@ A web application that demonstrates advanced DOM manipulation techniques in Java
 4. View filtered quotes in the dedicated display area
 5. Use the form to add your own quotes
 6. Press Enter in the category field to quickly add quotes
-7. Use "Export to JSON" to download your quote collection
-8. Use "Import from JSON" to add quotes from a file
-9. Use "Clear All Quotes" or "Reset to Defaults" for data management
+7. Enable "Auto Sync" for automatic server synchronization
+8. Use "Manual Sync Now" to sync with server immediately
+9. Resolve conflicts when detected between local and server data
+10. Use "Export to JSON" to download your quote collection
+11. Use "Import from JSON" to add quotes from a file
+12. Use "Clear All Quotes" or "Reset to Defaults" for data management
+
+## Server Sync & Conflict Resolution Features
+
+### Server Simulation
+- **Mock API Integration**: Simulates real server interaction using JSONPlaceholder
+- **Realistic Delays**: Includes API response delays for authentic testing
+- **Dynamic Updates**: Server occasionally adds new quotes to simulate real-world updates
+- **Data Persistence**: Server data is stored locally for consistent simulation
+
+### Data Synchronization
+- **Manual Sync**: On-demand synchronization with server data
+- **Auto Sync**: Configurable automatic synchronization (10-300 seconds)
+- **Smart Merging**: Intelligent merging of local and server data
+- **Conflict Detection**: Automatic detection of data conflicts
+
+### Conflict Resolution
+- **Automatic Detection**: Identifies conflicts between local and server data
+- **Visual Notifications**: Clear conflict notifications with resolution options
+- **Server Precedence**: Server data takes precedence in conflict resolution
+- **Manual Resolution**: Option for manual conflict resolution when needed
+
+### Sync Management
+- **Status Monitoring**: Real-time sync status and conflict monitoring
+- **Settings Persistence**: Sync settings persist across browser sessions
+- **Error Handling**: Robust error handling for network issues
+- **Performance Optimization**: Efficient sync algorithms with minimal overhead
 
 ## Category Filtering Features
 

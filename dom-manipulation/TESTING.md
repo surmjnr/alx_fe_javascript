@@ -175,7 +175,115 @@
 
 **Expected Result**: Filtered quotes should display with proper formatting and numbering
 
-### Test 13: Browser Compatibility
+### Test 14: Server Simulation & Data Syncing
+**Objective**: Verify server simulation and data syncing functionality
+
+**Steps**:
+1. Click "Manual Sync Now" button
+2. Verify sync status shows "Syncing..." during operation
+3. Check that server quotes are fetched and merged with local quotes
+4. Verify sync status shows success message with quote count
+5. Check that new server quotes appear in the collection
+6. Verify categories dropdown updates with new categories
+
+**Expected Result**: Manual sync should successfully fetch and merge server data
+
+### Test 15: Auto Sync Functionality
+**Objective**: Verify automatic synchronization works correctly
+
+**Steps**:
+1. Click "Enable Auto Sync" button
+2. Verify button changes to "Disable Auto Sync" and turns red
+3. Check that sync settings panel appears
+4. Wait for automatic sync to occur (default 30 seconds)
+5. Verify sync happens automatically without user intervention
+6. Click "Disable Auto Sync" and verify it stops
+
+**Expected Result**: Auto sync should work automatically at specified intervals
+
+### Test 16: Sync Settings Management
+**Objective**: Verify sync interval settings work correctly
+
+**Steps**:
+1. Enable auto sync
+2. Change sync interval to 15 seconds
+3. Click "Update" button
+4. Verify success message appears
+5. Wait and verify sync occurs at new interval
+6. Test with invalid intervals (too low/high)
+7. Verify error messages for invalid values
+
+**Expected Result**: Sync interval should be configurable and validated
+
+### Test 17: Conflict Detection
+**Objective**: Verify conflict detection between local and server data
+
+**Steps**:
+1. Add a quote locally
+2. Manually modify server data (via console or localStorage)
+3. Run manual sync
+4. Verify conflict notification appears
+5. Check that "Resolve Conflicts" button becomes visible
+6. Verify conflict details are displayed correctly
+
+**Expected Result**: Conflicts should be detected and reported to user
+
+### Test 18: Conflict Resolution
+**Objective**: Verify conflict resolution functionality
+
+**Steps**:
+1. Create a conflict scenario (as in Test 17)
+2. Click "Resolve Conflicts" button
+3. Verify conflicts are resolved automatically
+4. Check that notification disappears
+5. Verify resolved quotes are marked appropriately
+6. Check that data is synchronized correctly
+
+**Expected Result**: Conflicts should be resolved with server data taking precedence
+
+### Test 19: Sync Status Display
+**Objective**: Verify sync status information is accurate
+
+**Steps**:
+1. Click "Sync Status" button
+2. Verify all sync information is displayed correctly:
+   - Auto Sync status (Enabled/Disabled)
+   - Last Sync time
+   - Next Sync time
+   - Pending Conflicts count
+3. Perform a manual sync
+4. Check sync status again
+5. Verify information updates correctly
+
+**Expected Result**: Sync status should provide accurate and up-to-date information
+
+### Test 20: Data Persistence Across Sessions
+**Objective**: Verify sync settings persist across browser sessions
+
+**Steps**:
+1. Enable auto sync with custom interval
+2. Refresh the page
+3. Verify auto sync is still enabled
+4. Verify custom interval is preserved
+5. Close and reopen browser
+6. Verify sync settings are restored
+
+**Expected Result**: Sync settings should persist across sessions
+
+### Test 21: Error Handling
+**Objective**: Verify robust error handling for sync operations
+
+**Steps**:
+1. Disconnect from internet (or block requests)
+2. Try manual sync
+3. Verify appropriate error message appears
+4. Reconnect and try sync again
+5. Verify sync works after reconnection
+6. Test with invalid server responses
+
+**Expected Result**: Sync should handle errors gracefully with clear messages
+
+### Test 22: Browser Compatibility
 **Objective**: Verify functionality across different browsers
 
 **Steps**:
@@ -232,6 +340,10 @@ console.log(sessionStorage.getItem('quoteGenerator_preferences'));
 // Check filter storage
 console.log(localStorage.getItem('quoteGenerator_lastFilter'));
 
+// Check sync settings
+console.log(localStorage.getItem('quoteGenerator_syncSettings'));
+console.log(localStorage.getItem('quoteGenerator_serverQuotes'));
+
 // Test utility functions
 console.log(QuoteGenerator.filterQuotesByCategory('Motivation'));
 console.log(QuoteGenerator.searchQuotes('success'));
@@ -239,6 +351,11 @@ console.log(QuoteGenerator.searchQuotes('success'));
 // Test filtering functions
 QuoteGenerator.populateCategories();
 QuoteGenerator.filterQuotes();
+
+// Test sync functions
+QuoteGenerator.manualSync();
+QuoteGenerator.toggleAutoSync();
+QuoteGenerator.showSyncStatus();
 
 // Manual export test
 QuoteGenerator.exportToJson();
@@ -248,6 +365,10 @@ QuoteGenerator.saveQuotesToStorage();
 
 // Test category filtering
 QuoteGenerator.showRandomQuoteFromFilter();
+
+// Test server simulation
+QuoteGenerator.fetchQuotesFromServer().then(console.log);
+QuoteGenerator.detectConflicts(QuoteGenerator.quotes(), []);
 ```
 
 ## Expected Console Output

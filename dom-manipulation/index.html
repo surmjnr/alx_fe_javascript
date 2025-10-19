@@ -123,6 +123,42 @@
     </div>
     
     <div class="form-container">
+        <h3>Server Sync & Conflict Resolution</h3>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 15px;">
+            <button onclick="toggleAutoSync()" id="syncToggle" style="background-color: #28a745;">Enable Auto Sync</button>
+            <button onclick="manualSync()" style="background-color: #17a2b8;">Manual Sync Now</button>
+            <button onclick="showSyncStatus()" style="background-color: #6c757d;">Sync Status</button>
+            <button onclick="resolveConflicts()" id="resolveBtn" style="background-color: #ffc107; color: #000; display: none;">Resolve Conflicts</button>
+        </div>
+        <div id="syncStatus" style="margin-top: 10px; font-size: 14px; color: #666;"></div>
+        <div id="conflictNotification" style="margin-top: 10px; padding: 10px; border-radius: 5px; display: none;"></div>
+        <div id="syncSettings" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; display: none;">
+            <h4>Sync Settings</h4>
+            <label for="syncInterval">Sync Interval (seconds):</label>
+            <input type="number" id="syncInterval" value="30" min="10" max="300" style="width: 80px; margin: 0 10px;">
+            <button onclick="updateSyncInterval()">Update</button>
+        </div>
+    </div>
+    
+    <div class="form-container">
+        <h3>Server Sync & Conflict Resolution</h3>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 15px;">
+            <button onclick="toggleAutoSync()" id="syncToggle" style="background-color: #28a745;">Enable Auto Sync</button>
+            <button onclick="manualSync()" style="background-color: #17a2b8;">Manual Sync Now</button>
+            <button onclick="showSyncStatus()" style="background-color: #6c757d;">Sync Status</button>
+            <button onclick="resolveConflicts()" id="resolveBtn" style="background-color: #ffc107; color: #000; display: none;">Resolve Conflicts</button>
+        </div>
+        <div id="syncStatus" style="margin-top: 10px; font-size: 14px; color: #666;"></div>
+        <div id="conflictNotification" style="margin-top: 10px; padding: 10px; border-radius: 5px; display: none;"></div>
+        <div id="syncSettings" style="margin-top: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px; display: none;">
+            <h4>Sync Settings</h4>
+            <label for="syncInterval">Sync Interval (seconds):</label>
+            <input type="number" id="syncInterval" value="30" min="10" max="300" style="width: 80px; margin: 0 10px;">
+            <button onclick="updateSyncInterval()">Update</button>
+        </div>
+    </div>
+    
+    <div class="form-container">
         <h3>Import & Export Quotes</h3>
         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
             <button onclick="exportToJson()" style="background-color: #28a745;">Export to JSON</button>
@@ -133,7 +169,5 @@
         </div>
         <div id="importExportFeedback" style="margin-top: 10px; font-size: 14px;"></div>
     </div>
-    
-    <script src="script.js"></script>
 </body>
 </html>
