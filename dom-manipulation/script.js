@@ -1,5 +1,5 @@
-// Array of quote objects with text and category
-let quotes = [
+// Default quotes array
+const defaultQuotes = [
     {
         text: "The only way to do great work is to love what you do.",
         category: "Motivation"
@@ -34,13 +34,236 @@ let quotes = [
     }
 ];
 
+// Initialize quotes array from local storage or defaults
+let quotes = loadQuotesFromStorage();
+
+// ==================== WEB STORAGE FUNCTIONS ====================
+
+// Load quotes from local storage
+function loadQuotesFromStorage() {
+    try {
+        const storedQuotes = localStorage.getItem('quoteGenerator_quotes');
+        if (storedQuotes) {
+            const parsedQuotes = JSON.parse(storedQuotes);
+            // Validate that stored data is an array
+            if (Array.isArray(parsedQuotes)) {
+                return parsedQuotes;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading quotes from storage:', error);
+    }
+    // Return default quotes if no valid storage found
+    return [...defaultQuotes];
+}
+
+// Save quotes to local storage
+function saveQuotesToStorage() {
+    try {
+        localStorage.setItem('quoteGenerator_quotes', JSON.stringify(quotes));
+        return true;
+    } catch (error) {
+        console.error('Error saving quotes to storage:', error);
+        return false;
+    }
+}
+
+// Session storage functions for user preferences
+function saveLastViewedQuote(quote) {
+    try {
+        sessionStorage.setItem('quoteGenerator_lastQuote', JSON.stringify(quote));
+    } catch (error) {
+        console.error('Error saving last viewed quote:', error);
+    }
+}
+
+function getLastViewedQuote() {
+    try {
+        const lastQuote = sessionStorage.getItem('quoteGenerator_lastQuote');
+        return lastQuote ? JSON.parse(lastQuote) : null;
+    } catch (error) {
+        console.error('Error getting last viewed quote:', error);
+        return null;
+    }
+}
+
+function saveUserPreferences(preferences) {
+    try {
+        sessionStorage.setItem('quoteGenerator_preferences', JSON.stringify(preferences));
+    } catch (error) {
+        console.error('Error saving user preferences:', error);
+    }
+}
+
+function getUserPreferences() {
+    try {
+        const preferences = sessionStorage.getItem('quoteGenerator_preferences');
+        return preferences ? JSON.parse(preferences) : {};
+    } catch (error) {
+        console.error('Error getting user preferences:', error);
+        return {};
+    }
+}
+
+// ==================== JSON IMPORT/EXPORT FUNCTIONS ====================
+
+// Export quotes to JSON file
+function exportToJson() {
+    try {
+        const dataStr = JSON.stringify(quotes, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        
+        // Create download link
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `quotes_${new Date().toISOString().split('T')[0]}.json`;
+        
+        // Trigger download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up
+        URL.revokeObjectURL(url);
+        
+        showImportExportFeedback('Quotes exported successfully!', 'success');
+    } catch (error) {
+        console.error('Error exporting quotes:', error);
+        showImportExportFeedback('Error exporting quotes. Please try again.', 'error');
+    }
+}
+
+// Import quotes from JSON file
+function importFromJsonFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const fileReader = new FileReader();
+    
+    fileReader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            
+            // Validate imported data
+            if (!Array.isArray(importedData)) {
+                throw new Error('Invalid file format. Expected an array of quotes.');
+            }
+            
+            // Validate each quote object
+            const validQuotes = importedData.filter(quote => {
+                return quote && 
+                       typeof quote.text === 'string' && 
+                       typeof quote.category === 'string' &&
+                       quote.text.trim().length > 0 &&
+                       quote.category.trim().length > 0;
+            });
+            
+            if (validQuotes.length === 0) {
+                throw new Error('No valid quotes found in the file.');
+            }
+            
+            // Add imported quotes to existing array
+            const originalLength = quotes.length;
+            quotes.push(...validQuotes);
+            
+            // Save to local storage
+            if (saveQuotesToStorage()) {
+                const addedCount = quotes.length - originalLength;
+                showImportExportFeedback(
+                    `Successfully imported ${addedCount} quotes!`, 
+                    'success'
+                );
+                
+                // Update statistics display
+                updateQuoteStats();
+                
+                // Clear the file input
+                event.target.value = '';
+            } else {
+                throw new Error('Failed to save imported quotes.');
+            }
+            
+        } catch (error) {
+            console.error('Error importing quotes:', error);
+            showImportExportFeedback(
+                `Import failed: ${error.message}`, 
+                'error'
+            );
+        }
+    };
+    
+    fileReader.onerror = function() {
+        showImportExportFeedback('Error reading file. Please try again.', 'error');
+    };
+    
+    fileReader.readAsText(file);
+}
+
+// Clear all quotes
+function clearAllQuotes() {
+    if (confirm('Are you sure you want to clear all quotes? This action cannot be undone.')) {
+        quotes = [];
+        if (saveQuotesToStorage()) {
+            showImportExportFeedback('All quotes cleared successfully!', 'success');
+            updateQuoteStats();
+            showRandomQuote(); // Show default message
+        } else {
+            showImportExportFeedback('Error clearing quotes.', 'error');
+        }
+    }
+}
+
+// Reset to default quotes
+function resetToDefaults() {
+    if (confirm('Are you sure you want to reset to default quotes? This will replace all current quotes.')) {
+        quotes = [...defaultQuotes];
+        if (saveQuotesToStorage()) {
+            showImportExportFeedback('Reset to default quotes successfully!', 'success');
+            updateQuoteStats();
+            showRandomQuote();
+        } else {
+            showImportExportFeedback('Error resetting quotes.', 'error');
+        }
+    }
+}
+
+// Show feedback for import/export operations
+function showImportExportFeedback(message, type) {
+    const feedbackElement = document.getElementById('importExportFeedback');
+    feedbackElement.textContent = message;
+    feedbackElement.style.color = type === 'success' ? '#28a745' : '#dc3545';
+    feedbackElement.style.fontWeight = 'bold';
+    
+    // Clear feedback after 3 seconds
+    setTimeout(() => {
+        feedbackElement.textContent = '';
+        feedbackElement.style.fontWeight = 'normal';
+    }, 3000);
+}
+
+// ==================== MAIN APPLICATION FUNCTIONS ====================
+
 // Function to display a random quote
 function showRandomQuote() {
     const quoteDisplay = document.getElementById('quoteDisplay');
     
+    // Check if we have quotes to display
+    if (quotes.length === 0) {
+        const noQuotesElement = document.createElement('div');
+        noQuotesElement.className = 'quote-text';
+        noQuotesElement.textContent = 'No quotes available. Add some quotes or reset to defaults.';
+        quoteDisplay.innerHTML = '';
+        quoteDisplay.appendChild(noQuotesElement);
+        return;
+    }
+    
     // Get a random quote from the array
     const randomIndex = Math.floor(Math.random() * quotes.length);
     const randomQuote = quotes[randomIndex];
+    
+    // Save last viewed quote to session storage
+    saveLastViewedQuote(randomQuote);
     
     // Create DOM elements dynamically
     const quoteTextElement = document.createElement('div');
@@ -84,12 +307,22 @@ function addQuote() {
     // Add to quotes array
     quotes.push(newQuote);
     
+    // Save to local storage
+    if (!saveQuotesToStorage()) {
+        alert('Error saving quote. Please try again.');
+        quotes.pop(); // Remove the quote if save failed
+        return;
+    }
+    
     // Clear the form inputs
     document.getElementById('newQuoteText').value = '';
     document.getElementById('newQuoteCategory').value = '';
     
     // Show success message
     showSuccessMessage('Quote added successfully!');
+    
+    // Update statistics
+    updateQuoteStats();
     
     // Optionally display the newly added quote
     setTimeout(() => {
@@ -171,18 +404,25 @@ function createAddQuoteForm() {
 }
 
 // Function to display quote statistics
-function showQuoteStats() {
-    const statsElement = document.createElement('div');
-    statsElement.style.textAlign = 'center';
-    statsElement.style.marginTop = '20px';
-    statsElement.style.fontSize = '14px';
-    statsElement.style.color = '#666';
+function updateQuoteStats() {
+    let statsElement = document.getElementById('quoteStats');
+    
+    if (!statsElement) {
+        statsElement = document.createElement('div');
+        statsElement.id = 'quoteStats';
+        statsElement.style.textAlign = 'center';
+        statsElement.style.marginTop = '20px';
+        statsElement.style.fontSize = '14px';
+        statsElement.style.color = '#666';
+        document.body.appendChild(statsElement);
+    }
+    
+    const categories = [...new Set(quotes.map(q => q.category))];
     statsElement.innerHTML = `
         <p>Total Quotes: ${quotes.length}</p>
-        <p>Categories: ${[...new Set(quotes.map(q => q.category))].length}</p>
+        <p>Categories: ${categories.length}</p>
+        <p>Categories: ${categories.join(', ')}</p>
     `;
-    
-    document.body.appendChild(statsElement);
 }
 
 // Initialize the application when the page loads
@@ -194,12 +434,46 @@ document.addEventListener('DOMContentLoaded', function() {
     createAddQuoteForm();
     
     // Show initial quote statistics
-    showQuoteStats();
+    updateQuoteStats();
     
-    // Display a welcome message
-    setTimeout(() => {
-        showRandomQuote();
-    }, 500);
+    // Check for last viewed quote in session storage
+    const lastQuote = getLastViewedQuote();
+    if (lastQuote) {
+        // Show last viewed quote if available
+        const quoteDisplay = document.getElementById('quoteDisplay');
+        const quoteTextElement = document.createElement('div');
+        quoteTextElement.className = 'quote-text';
+        quoteTextElement.textContent = `"${lastQuote.text}"`;
+        
+        const quoteCategoryElement = document.createElement('div');
+        quoteCategoryElement.className = 'quote-category';
+        quoteCategoryElement.textContent = `- ${lastQuote.category}`;
+        
+        quoteDisplay.innerHTML = '';
+        quoteDisplay.appendChild(quoteTextElement);
+        quoteDisplay.appendChild(quoteCategoryElement);
+        
+        // Add a note about session restoration
+        const sessionNote = document.createElement('div');
+        sessionNote.style.fontSize = '12px';
+        sessionNote.style.color = '#888';
+        sessionNote.style.marginTop = '10px';
+        sessionNote.textContent = '(Restored from previous session)';
+        quoteDisplay.appendChild(sessionNote);
+    } else {
+        // Display a welcome message
+        setTimeout(() => {
+            showRandomQuote();
+        }, 500);
+    }
+    
+    // Save user preferences (e.g., theme, font size, etc.)
+    const userPreferences = {
+        lastVisit: new Date().toISOString(),
+        theme: 'light',
+        fontSize: 'medium'
+    };
+    saveUserPreferences(userPreferences);
 });
 
 // Additional utility functions for advanced DOM manipulation
@@ -235,5 +509,15 @@ window.QuoteGenerator = {
     filterQuotesByCategory,
     searchQuotes,
     getRandomQuoteFromCategory,
+    exportToJson,
+    importFromJsonFile,
+    clearAllQuotes,
+    resetToDefaults,
+    saveQuotesToStorage,
+    loadQuotesFromStorage,
+    saveLastViewedQuote,
+    getLastViewedQuote,
+    saveUserPreferences,
+    getUserPreferences,
     quotes: () => quotes // Getter function to access quotes array
 };

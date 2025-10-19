@@ -107,6 +107,18 @@
         </div>
     </div>
     
+    <div class="form-container">
+        <h3>Import & Export Quotes</h3>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <button onclick="exportToJson()" style="background-color: #28a745;">Export to JSON</button>
+            <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" style="display: none;" />
+            <button onclick="document.getElementById('importFile').click()" style="background-color: #17a2b8;">Import from JSON</button>
+            <button onclick="clearAllQuotes()" style="background-color: #dc3545;">Clear All Quotes</button>
+            <button onclick="resetToDefaults()" style="background-color: #6c757d;">Reset to Defaults</button>
+        </div>
+        <div id="importExportFeedback" style="margin-top: 10px; font-size: 14px;"></div>
+    </div>
+    
     <script src="script.js"></script>
 </body>
 </html>
