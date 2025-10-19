@@ -8,7 +8,10 @@ A web application that demonstrates advanced DOM manipulation techniques in Java
 - **Dynamic Quote Addition**: Allows users to add their own quotes through a form interface
 - **Local Storage Persistence**: Quotes are automatically saved and restored across browser sessions
 - **Session Storage**: Remembers the last viewed quote within the same session
-- **JSON Import/Export**: Import quotes from JSON files or export your collection
+- **Category Filtering**: Filter quotes by category with a dynamic dropdown menu
+- **Filter Persistence**: Remember the last selected filter across browser sessions
+- **Dynamic Category Management**: Categories are automatically updated when quotes are added
+- **Filtered Quote Display**: View all quotes in a selected category with proper formatting
 - **Data Management**: Clear all quotes or reset to default collection
 - **Real-time Validation**: Form validation with user feedback
 - **Smooth Animations**: CSS transitions for better user experience
@@ -37,6 +40,13 @@ A web application that demonstrates advanced DOM manipulation techniques in Java
 - `saveUserPreferences(preferences)` - Saves user preferences to sessionStorage
 - `getUserPreferences()` - Retrieves user preferences from sessionStorage
 
+### Category Filtering Functions
+- `populateCategories()` - Populates the category dropdown with unique categories
+- `filterQuotes()` - Filters and displays quotes based on selected category
+- `showRandomQuoteFromFilter()` - Shows random quote respecting current filter
+- `saveLastSelectedFilter(category)` - Saves selected filter to localStorage
+- `getLastSelectedFilter()` - Retrieves last selected filter from localStorage
+
 ### JSON Import/Export Functions
 - `exportToJson()` - Exports quotes to a downloadable JSON file
 - `importFromJsonFile(event)` - Imports quotes from a JSON file
@@ -53,11 +63,32 @@ A web application that demonstrates advanced DOM manipulation techniques in Java
 
 1. Open `index.html` in a web browser
 2. Click "Show New Quote" to display random quotes
-3. Use the form to add your own quotes
-4. Press Enter in the category field to quickly add quotes
-5. Use "Export to JSON" to download your quote collection
-6. Use "Import from JSON" to add quotes from a file
-7. Use "Clear All Quotes" or "Reset to Defaults" for data management
+3. Use the category dropdown to filter quotes by category
+4. View filtered quotes in the dedicated display area
+5. Use the form to add your own quotes
+6. Press Enter in the category field to quickly add quotes
+7. Use "Export to JSON" to download your quote collection
+8. Use "Import from JSON" to add quotes from a file
+9. Use "Clear All Quotes" or "Reset to Defaults" for data management
+
+## Category Filtering Features
+
+### Dynamic Category Management
+- **Automatic Population**: Categories are extracted from quotes and populated in dropdown
+- **Real-time Updates**: Categories dropdown updates when new quotes are added
+- **Sorted Display**: Categories are displayed in alphabetical order
+- **Persistent Selection**: Last selected filter is remembered across sessions
+
+### Filtering Functionality
+- **Category Selection**: Choose from "All Categories" or specific categories
+- **Filtered Display**: View all quotes in selected category with proper formatting
+- **Quote Numbering**: Each filtered quote shows its position (1 of X, 2 of X, etc.)
+- **Empty State Handling**: Shows appropriate message when no quotes found in category
+
+### Integration with Random Quotes
+- **Filtered Random**: "Show New Quote" button respects current category filter
+- **Smart Fallback**: Handles categories with no quotes gracefully
+- **Session Memory**: Last viewed quote is saved even when filtered
 
 ## Web Storage Features
 

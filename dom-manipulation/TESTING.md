@@ -104,7 +104,78 @@
 
 **Expected Result**: Statistics should update in real-time
 
-### Test 8: Browser Compatibility
+### Test 8: Category Filtering System
+**Objective**: Verify category filtering functionality works correctly
+
+**Steps**:
+1. Check that categories dropdown is populated with all available categories
+2. Select a specific category from the dropdown
+3. Verify that filtered quotes are displayed below
+4. Check that quote count is shown correctly
+5. Select "All Categories" and verify filtered display is hidden
+6. Add a new quote with a new category
+7. Verify the new category appears in the dropdown
+8. Test filtering with the new category
+
+**Expected Result**: Category filtering should work seamlessly with real-time updates
+
+### Test 9: Filter Persistence
+**Objective**: Verify filter selection persists across sessions
+
+**Steps**:
+1. Select a specific category filter
+2. Refresh the page (F5)
+3. Verify the same category is still selected
+4. Close and reopen the browser
+5. Verify the filter selection is restored
+6. Test with different categories
+
+**Expected Result**: Last selected filter should persist across sessions
+
+### Test 10: Random Quote with Filtering
+**Objective**: Verify "Show New Quote" button respects category filter
+
+**Steps**:
+1. Select a specific category
+2. Click "Show New Quote" multiple times
+3. Verify all quotes shown belong to the selected category
+4. Select "All Categories"
+5. Click "Show New Quote" and verify quotes from any category can appear
+6. Test with categories that have only one quote
+
+**Expected Result**: Random quotes should respect the current filter selection
+
+### Test 11: Category Management
+**Objective**: Verify category dropdown updates correctly
+
+**Steps**:
+1. Note initial categories in dropdown
+2. Add quotes with existing categories
+3. Verify dropdown doesn't duplicate categories
+4. Add quotes with new categories
+5. Verify new categories appear in dropdown
+6. Clear all quotes
+7. Verify dropdown shows only "All Categories"
+8. Reset to defaults
+9. Verify default categories are restored
+
+**Expected Result**: Category dropdown should update dynamically and accurately
+
+### Test 12: Filtered Quotes Display
+**Objective**: Verify filtered quotes display correctly
+
+**Steps**:
+1. Select a category with multiple quotes
+2. Verify all quotes in that category are displayed
+3. Check that quotes are numbered correctly (1 of X, 2 of X, etc.)
+4. Verify styling and formatting of filtered quotes
+5. Select a category with no quotes
+6. Verify "No quotes found" message appears
+7. Test with categories that have one quote
+
+**Expected Result**: Filtered quotes should display with proper formatting and numbering
+
+### Test 13: Browser Compatibility
 **Objective**: Verify functionality across different browsers
 
 **Steps**:
@@ -158,15 +229,25 @@ console.log(localStorage.getItem('quoteGenerator_quotes'));
 console.log(sessionStorage.getItem('quoteGenerator_lastQuote'));
 console.log(sessionStorage.getItem('quoteGenerator_preferences'));
 
+// Check filter storage
+console.log(localStorage.getItem('quoteGenerator_lastFilter'));
+
 // Test utility functions
 console.log(QuoteGenerator.filterQuotesByCategory('Motivation'));
 console.log(QuoteGenerator.searchQuotes('success'));
+
+// Test filtering functions
+QuoteGenerator.populateCategories();
+QuoteGenerator.filterQuotes();
 
 // Manual export test
 QuoteGenerator.exportToJson();
 
 // Manual storage test
 QuoteGenerator.saveQuotesToStorage();
+
+// Test category filtering
+QuoteGenerator.showRandomQuoteFromFilter();
 ```
 
 ## Expected Console Output
