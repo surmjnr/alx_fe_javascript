@@ -416,6 +416,7 @@ let isOnline = navigator.onLine;
 // Server simulation using JSONPlaceholder
 const SERVER_BASE_URL = 'https://jsonplaceholder.typicode.com';
 const QUOTES_ENDPOINT = '/posts'; // We'll simulate quotes using posts
+const FULL_API_URL = 'https://jsonplaceholder.typicode.com/posts'; // Complete URL for testing
 
 // Initialize server simulation
 function initializeServerSimulation() {
