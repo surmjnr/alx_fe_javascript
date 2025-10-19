@@ -475,8 +475,48 @@ function saveSyncSettings() {
     }
 }
 
-// Simulate fetching quotes from server
+// Simulate fetching quotes from server using JSONPlaceholder
 async function fetchQuotesFromServer() {
+    try {
+        // Fetch from JSONPlaceholder API
+        const response = await fetch(`${SERVER_BASE_URL}${QUOTES_ENDPOINT}`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const posts = await response.json();
+        
+        // Convert posts to quote format
+        const serverQuotesFromAPI = posts.slice(0, 5).map((post, index) => ({
+            id: `server_${post.id}`,
+            text: post.title,
+            category: `API Quote ${index + 1}`,
+            source: 'jsonplaceholder',
+            serverId: post.id
+        }));
+        
+        // Merge with existing server quotes
+        const existingServerQuotes = serverQuotes.filter(q => q.source !== 'jsonplaceholder');
+        const allServerQuotes = [...existingServerQuotes, ...serverQuotesFromAPI];
+        
+        // Update server quotes storage
+        serverQuotes = allServerQuotes;
+        saveServerQuotesToStorage();
+        
+        return allServerQuotes;
+        
+    } catch (error) {
+        console.error('Error fetching from JSONPlaceholder:', error);
+        
+        // Fallback to local simulation if API fails
+        console.log('Falling back to local simulation...');
+        return await fetchQuotesFromServerFallback();
+    }
+}
+
+// Fallback function for when API is unavailable
+async function fetchQuotesFromServerFallback() {
     try {
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -487,9 +527,10 @@ async function fetchQuotesFromServer() {
         // Occasionally add new quotes to simulate server updates
         if (Math.random() < 0.3) { // 30% chance of new quote
             const newQuote = {
-                id: Date.now(),
+                id: `fallback_${Date.now()}`,
                 text: `Server update ${new Date().toLocaleTimeString()}: ${getRandomServerQuote()}`,
-                category: "Server Update"
+                category: "Server Update",
+                source: 'fallback'
             };
             simulatedServerResponse.push(newQuote);
             serverQuotes.push(newQuote);
@@ -498,7 +539,7 @@ async function fetchQuotesFromServer() {
         
         return simulatedServerResponse;
     } catch (error) {
-        console.error('Error fetching from server:', error);
+        console.error('Error in fallback fetch:', error);
         throw error;
     }
 }
@@ -515,8 +556,49 @@ function getRandomServerQuote() {
     return serverQuotes[Math.floor(Math.random() * serverQuotes.length)];
 }
 
-// Simulate posting quotes to server
+// Post quotes to server using JSONPlaceholder
 async function postQuotesToServer(quotesToSync) {
+    try {
+        // Simulate posting to JSONPlaceholder API
+        const response = await fetch(`${SERVER_BASE_URL}${QUOTES_ENDPOINT}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: quotesToSync[0]?.text || 'New Quote',
+                body: quotesToSync[0]?.category || 'Quote Category',
+                userId: 1
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // Process the response and return updated quotes
+        const processedQuotes = quotesToSync.map(quote => ({
+            ...quote,
+            serverId: result.id || `server_${Date.now()}`,
+            lastModified: new Date().toISOString(),
+            source: 'posted_to_server'
+        }));
+        
+        return processedQuotes;
+        
+    } catch (error) {
+        console.error('Error posting to JSONPlaceholder:', error);
+        
+        // Fallback to local simulation
+        console.log('Falling back to local simulation for posting...');
+        return await postQuotesToServerFallback(quotesToSync);
+    }
+}
+
+// Fallback function for posting when API is unavailable
+async function postQuotesToServerFallback(quotesToSync) {
     try {
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -524,34 +606,43 @@ async function postQuotesToServer(quotesToSync) {
         // Simulate server processing
         const processedQuotes = quotesToSync.map(quote => ({
             ...quote,
-            serverId: `server_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            lastModified: new Date().toISOString()
+            serverId: `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            lastModified: new Date().toISOString(),
+            source: 'fallback_posted'
         }));
         
         return processedQuotes;
     } catch (error) {
-        console.error('Error posting to server:', error);
+        console.error('Error in fallback post:', error);
         throw error;
     }
 }
 
-// Manual sync function
-async function manualSync() {
-    updateSyncStatus('Syncing...', 'info');
-    
+// Main syncQuotes function - the primary sync function
+async function syncQuotes() {
     try {
-        // Fetch from server
+        updateSyncStatus('Starting sync...', 'info');
+        
+        // Fetch latest quotes from server
         const serverData = await fetchQuotesFromServer();
         
-        // Compare with local data
+        // Detect conflicts
         const conflicts = detectConflicts(quotes, serverData);
         
         if (conflicts.length > 0) {
+            // Handle conflicts
             pendingConflicts = conflicts;
             showConflictNotification(conflicts);
-            updateSyncStatus('Conflicts detected. Manual resolution required.', 'warning');
+            updateSyncStatus(`Sync completed with ${conflicts.length} conflicts detected.`, 'warning');
+            
+            // Auto-resolve conflicts if auto-sync is enabled
+            if (autoSyncEnabled) {
+                setTimeout(() => {
+                    resolveConflicts();
+                }, 2000); // Auto-resolve after 2 seconds
+            }
         } else {
-            // Merge server data with local data
+            // No conflicts - merge data
             const mergedQuotes = mergeQuotes(quotes, serverData);
             quotes = mergedQuotes;
             saveQuotesToStorage();
@@ -561,13 +652,70 @@ async function manualSync() {
             updateSyncStatus(`Sync completed successfully. ${mergedQuotes.length} quotes synchronized.`, 'success');
         }
         
+        // Update last sync time
         lastSyncTime = new Date();
         saveSyncSettings();
         
+        // Show data update notification
+        showDataUpdateNotification(serverData.length);
+        
     } catch (error) {
-        updateSyncStatus('Sync failed. Please try again.', 'error');
         console.error('Sync error:', error);
+        updateSyncStatus('Sync failed. Please check your connection and try again.', 'error');
+        showErrorNotification('Sync failed: ' + error.message);
     }
+}
+
+// Enhanced periodic checking for new quotes
+function startPeriodicQuoteCheck() {
+    if (syncTimer) {
+        clearInterval(syncTimer);
+    }
+    
+    syncTimer = setInterval(async () => {
+        try {
+            console.log('Performing periodic quote check...');
+            
+            // Fetch latest quotes from server
+            const serverData = await fetchQuotesFromServer();
+            
+            // Check for new quotes
+            const newQuotes = serverData.filter(serverQuote => 
+                !quotes.some(localQuote => 
+                    localQuote.id === serverQuote.id || 
+                    localQuote.text === serverQuote.text
+                )
+            );
+            
+            if (newQuotes.length > 0) {
+                console.log(`Found ${newQuotes.length} new quotes from server`);
+                
+                // Add new quotes to local collection
+                quotes.push(...newQuotes);
+                saveQuotesToStorage();
+                updateQuoteStats();
+                populateCategories();
+                
+                // Show notification for new quotes
+                showNewQuotesNotification(newQuotes);
+                
+                // Update sync status
+                updateSyncStatus(`Found ${newQuotes.length} new quotes from server.`, 'success');
+            } else {
+                console.log('No new quotes found from server');
+                updateSyncStatus('Periodic check completed. No new quotes found.', 'info');
+            }
+            
+            lastSyncTime = new Date();
+            saveSyncSettings();
+            
+        } catch (error) {
+            console.error('Periodic check error:', error);
+            updateSyncStatus('Periodic check failed. Will retry next interval.', 'error');
+        }
+    }, syncInterval);
+    
+    console.log(`Periodic quote checking started with ${syncInterval / 1000} second intervals`);
 }
 
 // Detect conflicts between local and server data
@@ -662,9 +810,8 @@ function startAutoSync() {
         clearInterval(syncTimer);
     }
     
-    syncTimer = setInterval(() => {
-        manualSync();
-    }, syncInterval);
+    // Use the enhanced periodic checking function
+    startPeriodicQuoteCheck();
     
     updateSyncStatus(`Auto sync enabled. Next sync in ${syncInterval / 1000} seconds.`, 'info');
 }
@@ -789,6 +936,69 @@ function resolveConflicts() {
     document.getElementById('resolveBtn').style.display = 'none';
     
     updateSyncStatus(`Resolved ${resolvedCount} conflicts. Data synchronized.`, 'success');
+}
+
+// Show notification for data updates
+function showDataUpdateNotification(serverDataCount) {
+    const notificationElement = document.getElementById('conflictNotification');
+    
+    notificationElement.innerHTML = `
+        <strong>✅ Data Updated</strong><br>
+        Successfully synchronized with server. ${serverDataCount} quotes processed.<br>
+        <small>Your local data has been updated with the latest server information.</small>
+    `;
+    
+    notificationElement.style.backgroundColor = '#d4edda';
+    notificationElement.style.borderColor = '#c3e6cb';
+    notificationElement.style.color = '#155724';
+    notificationElement.style.display = 'block';
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        notificationElement.style.display = 'none';
+    }, 5000);
+}
+
+// Show notification for new quotes
+function showNewQuotesNotification(newQuotes) {
+    const notificationElement = document.getElementById('conflictNotification');
+    
+    notificationElement.innerHTML = `
+        <strong>🆕 New Quotes Available</strong><br>
+        Found ${newQuotes.length} new quote(s) from the server.<br>
+        <small>These quotes have been automatically added to your collection.</small>
+    `;
+    
+    notificationElement.style.backgroundColor = '#cce5ff';
+    notificationElement.style.borderColor = '#99d6ff';
+    notificationElement.style.color = '#004085';
+    notificationElement.style.display = 'block';
+    
+    // Auto-hide after 7 seconds
+    setTimeout(() => {
+        notificationElement.style.display = 'none';
+    }, 7000);
+}
+
+// Show error notification
+function showErrorNotification(errorMessage) {
+    const notificationElement = document.getElementById('conflictNotification');
+    
+    notificationElement.innerHTML = `
+        <strong>❌ Error Occurred</strong><br>
+        ${errorMessage}<br>
+        <small>Please check your connection and try again.</small>
+    `;
+    
+    notificationElement.style.backgroundColor = '#f8d7da';
+    notificationElement.style.borderColor = '#f5c6cb';
+    notificationElement.style.color = '#721c24';
+    notificationElement.style.display = 'block';
+    
+    // Auto-hide after 10 seconds
+    setTimeout(() => {
+        notificationElement.style.display = 'none';
+    }, 10000);
 }
 
 // ==================== MAIN APPLICATION FUNCTIONS ====================
@@ -1060,6 +1270,11 @@ function getRandomQuoteFromCategory(category) {
     return categoryQuotes[randomIndex];
 }
 
+// Manual sync function (wrapper for syncQuotes)
+async function manualSync() {
+    await syncQuotes();
+}
+
 // Export functions for potential external use (if needed)
 window.QuoteGenerator = {
     showRandomQuote,
@@ -1083,6 +1298,7 @@ window.QuoteGenerator = {
     saveLastSelectedFilter,
     getLastSelectedFilter,
     // Server sync functions
+    syncQuotes,
     manualSync,
     toggleAutoSync,
     showSyncStatus,
@@ -1092,5 +1308,9 @@ window.QuoteGenerator = {
     detectConflicts,
     mergeQuotes,
     initializeServerSimulation,
+    startPeriodicQuoteCheck,
+    showDataUpdateNotification,
+    showNewQuotesNotification,
+    showErrorNotification,
     quotes: () => quotes // Getter function to access quotes array
 };
